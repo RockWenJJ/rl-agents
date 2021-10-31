@@ -103,12 +103,12 @@ class Evaluation(object):
             self.reward_viewer = RewardViewer()
         self.observation = None
 
-    def train(self):
+    def train(self, wandb_logger):
         self.training = True
         if getattr(self.agent, "batched", False):
             self.run_batched_episodes()
         else:
-            self.run_episodes()
+            self.run_episodes(wandb_logger)
         self.close()
 
     def test(self):
@@ -127,7 +127,7 @@ class Evaluation(object):
         self.run_episodes()
         self.close()
 
-    def run_episodes(self):
+    def run_episodes(self, wandb_logger):
         for self.episode in range(self.num_episodes):
             # Run episode
             terminal = False
@@ -151,6 +151,11 @@ class Evaluation(object):
             duration = time.time() - start_time
             self.after_all_episodes(self.episode, rewards, duration)
             self.after_some_episodes(self.episode, rewards)
+
+            # Log to wandb
+            log_dict = {'episode/length': len(rewards),
+                        'episode/total_reward': sum(rewards)}
+            wandb_logger.log(log_dict, self.episode)
 
     def step(self):
         """
